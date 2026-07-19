@@ -48,6 +48,10 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#ifdef HAVE_DIRECT_H
+#include <direct.h>
+#endif
 // ----------   Xyce Includes   ----------
 
 #include <N_PDS_EpetraMPIComm.h>
@@ -999,7 +1003,11 @@ void EpetraMPIComm::createMPIComm( int iargs, char * cargs[] )
   //                
   const int maxPathLen = 4096;
   char originalCWD[maxPathLen];
+  #ifdef HAVE_DIRECT_H
+  char * getcwdRV1 = _getcwd( originalCWD, maxPathLen );
+  #else
   char * getcwdRV1 = getcwd( originalCWD, maxPathLen );
+  #endif
 
   // Check if MPI has already been initialized.  If it has, we don't own the MPI_Comm.
   int initialized = false;
@@ -1017,13 +1025,21 @@ void EpetraMPIComm::createMPIComm( int iargs, char * cargs[] )
   }
 
   char currentCWD[maxPathLen];
+  #ifdef HAVE_DIRECT_H
+  char * getcwdRV2 = _getcwd( currentCWD, maxPathLen );
+  #else
   char * getcwdRV2 = getcwd( currentCWD, maxPathLen );
+  #endif
 
   if( (getcwdRV1 != NULL) && (getcwdRV2 != NULL) )
   {
     if( strcmp( originalCWD, currentCWD ) != 0 )
     {
+      #ifdef HAVE_DIRECT_H
+      if( _chdir( originalCWD ) != 0 )
+      #else
       if( chdir( originalCWD ) != 0 )
+      #endif
       {
         // changing the directory back may have failed.  Issue a warning
         // and try and continue.

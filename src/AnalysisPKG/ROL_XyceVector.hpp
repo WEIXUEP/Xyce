@@ -64,7 +64,7 @@ class ROL_XyceVector : public ::ROL::Vector<Real> {
 private:
   // a vector of pointers to Xyce vectors
   //Teuchos::RCP< std::vector< MultiVector *> >  xyce_multi_vec_;
-  Teuchos::RCP< std::vector<Teuchos::RCP<Vector> > >  xyce_multi_vec_;
+  Teuchos::RCP< std::vector<Teuchos::RCP<::Xyce::Linear::Vector> > >  xyce_multi_vec_;
   int size_;
 
 public:
@@ -73,21 +73,21 @@ public:
   // constructor
   ROL_XyceVector( const int size, const MultiVector & xyce_multi_vec ){
     size_ = size;
-    xyce_multi_vec_ = Teuchos::rcp( new std::vector< Teuchos::RCP<Vector> >(size_));
+    xyce_multi_vec_ = Teuchos::rcp( new std::vector< Teuchos::RCP<::Xyce::Linear::Vector> >(size_));
     for (int i=0;i<size_;i++){
       (*xyce_multi_vec_)[i] = Teuchos::rcp( createVector( *xyce_multi_vec.pmap(), *xyce_multi_vec.omap() ));
     }
   }
 
   // copy constructor
-  ROL_XyceVector(const Teuchos::RCP<std::vector<Teuchos::RCP<Vector> > > & xyce_multi_vec) : xyce_multi_vec_(xyce_multi_vec) {
+  ROL_XyceVector(const Teuchos::RCP<std::vector<Teuchos::RCP<::Xyce::Linear::Vector> > > & xyce_multi_vec) : xyce_multi_vec_(xyce_multi_vec) {
     size_ = xyce_multi_vec_->size();
   }
 
   // copy constructor accepting vectors of raw pointers
-  ROL_XyceVector(std::vector<Vector *> & xyce_multi_vec){
+  ROL_XyceVector(std::vector<::Xyce::Linear::Vector *> & xyce_multi_vec){
     size_ = xyce_multi_vec.size();
-    xyce_multi_vec_ = Teuchos::rcp( new std::vector< Teuchos::RCP<Vector> >(size_));
+    xyce_multi_vec_ = Teuchos::rcp( new std::vector< Teuchos::RCP<::Xyce::Linear::Vector> >(size_));
     //std::vector<Vector *> & xmv = const_cast<std::vector<Vector *> &>(xyce_multi_vec);
     for (int i=0;i<size_;i++){
       (*xyce_multi_vec_)[i] = Teuchos::rcpFromRef(*xyce_multi_vec[i]);
@@ -95,12 +95,12 @@ public:
   }
 
   // access functions
-  Teuchos::RCP<const std::vector<Teuchos::RCP<Vector> > > getVector() const {
+  Teuchos::RCP<const std::vector<Teuchos::RCP<::Xyce::Linear::Vector> > > getVector() const {
     return this->xyce_multi_vec_;
   }
 
 
-  Teuchos::RCP<std::vector<Teuchos::RCP<Vector> > > getVector() {
+  Teuchos::RCP<std::vector<Teuchos::RCP<::Xyce::Linear::Vector> > > getVector() {
     return this->xyce_multi_vec_;
   }
 
@@ -154,7 +154,7 @@ public:
     // return Teuchos::rcp(new ROL_XyceVector( Teuchos::rcp( MultiVector( *(xyce_multi_vec_->pmap()), xyce_multi_vec_->numVectors() ) )) );
     //return Teuchos::rcp(new ROL_XyceVector( Teuchos::rcp( new std::vector< MultiVector *>(MultiVector(*((*xyce_multi_vec_)[0]) ) ) ) ) );
 
-    Teuchos::RCP< std::vector<Teuchos::RCP<Vector> > > x = Teuchos::rcp( new std::vector<Teuchos::RCP<Vector> >(size_));
+    Teuchos::RCP< std::vector<Teuchos::RCP<::Xyce::Linear::Vector> > > x = Teuchos::rcp( new std::vector<Teuchos::RCP<::Xyce::Linear::Vector> >(size_));
 
     //Teuchos::RCP< std::vector< MultiVector * > > x = Teuchos::rcp( new std::vector< MultiVector * >(size_, &*Teuchos::rcp(new EpetraVector( *((*xyce_multi_vec_)[0]->pmap()), *((*xyce_multi_vec_)[0]->omap()) ) )  ));
 
@@ -201,7 +201,7 @@ public:
     }
   }
 
-  virtual void putScalar(Real alpha) {
+  virtual void setScalar(const Real alpha) override {
     for (int i=0;i<size_;i++){
       (*xyce_multi_vec_)[i]->putScalar( (double)alpha );
     }

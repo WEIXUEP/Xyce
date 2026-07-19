@@ -824,13 +824,14 @@ Simulator::RunStatus Simulator::initialize(const std::vector<std::string> argume
 {
 
   const int argc = arguments.size()+1;
-  char const * argv[argc];
-  argv[0] = std::string("Xyce").c_str();
+  const std::string programName("Xyce");
+  std::vector<const char *> argv(argc);
+  argv[0] = programName.c_str();
   for(auto i=0; i<arguments.size(); i++)
   {
     argv[i+1] = arguments[i].c_str();
   }
-  RunStatus status = this->initialize( argc, const_cast<char **>(argv) );
+  RunStatus status = this->initialize( argc, const_cast<char **>(argv.data()) );
   return status;
 }
 
@@ -846,13 +847,14 @@ Simulator::RunStatus Simulator::initializeEarly(const std::vector<std::string> a
 {
 
   const int argc = arguments.size()+1;
-  char const * argv[argc];
-  argv[0] = std::string("Xyce").c_str();
+  const std::string programName("Xyce");
+  std::vector<const char *> argv(argc);
+  argv[0] = programName.c_str();
   for(auto i=0; i<arguments.size(); i++)
   {
     argv[i+1] = arguments[i].c_str();
   }
-  RunStatus status = this->initializeEarly( argc, const_cast<char **>(argv) );
+  RunStatus status = this->initializeEarly( argc, const_cast<char **>(argv.data()) );
   return status;
 }
 //-----------------------------------------------------------------------------
@@ -965,6 +967,10 @@ Simulator::RunStatus Simulator::initializeEarly(
     }
   }
   Report::safeBarrier(comm_);
+
+  // Build the initial device configuration after plugin loading so the
+  // netlist parser can recognize plugin-provided devices and model levels.
+  Device::registerDevices();
 
   // Handle "-param", "-doc" and "-doc_cat"
   bool gotParamOpt=false;

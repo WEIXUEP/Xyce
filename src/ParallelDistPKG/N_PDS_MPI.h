@@ -272,6 +272,16 @@ struct Datatype<unsigned long>
   }
 };
 
+template <>
+struct Datatype<size_t>
+{
+  static MPI_Datatype type() {
+    return sizeof(size_t) == sizeof(unsigned long long) ? MPI_UNSIGNED_LONG_LONG :
+           sizeof(size_t) == sizeof(unsigned long)      ? MPI_UNSIGNED_LONG :
+                                                           MPI_UNSIGNED;
+  }
+};
+
 // #ifdef MPI_LONG_LONG_INT
 // template <>
 // struct Datatype<long long>

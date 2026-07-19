@@ -109,6 +109,8 @@ XyceInstDir=$(dirname "$SCRIPTPATH")
 xmldir=${XyceInstDir}/share
 
 CXX='@CMAKE_CXX_COMPILER@'
+GENERATOR='@CMAKE_GENERATOR@'
+PLUGIN_SUFFIX='@CMAKE_SHARED_LIBRARY_SUFFIX@'
 
 echo "buildxyceplugin log begun at `date`\n" > buildxyceplugin.log
 echo " script invoked as: \n $0 $@" >> buildxyceplugin.log
@@ -125,7 +127,7 @@ do
              ;;
     esac
 done
-shift `echo $OPTIND-1 | bc`
+shift $((OPTIND-1))
 
 headerstring=""
 registerstring=""
@@ -148,7 +150,7 @@ then
     echo "The plugin name will be generated automatically from the module name"
     echo "in the last file of this list."
 else
-    echo "The plugin name will be ${pluginname}.so"
+    echo "The plugin name will be ${pluginname}${PLUGIN_SUFFIX}"
 fi
 
 count=0
@@ -188,7 +190,7 @@ do
        fi
        OBJFILES="$OBJFILES N_DEV_ADMS${module}.lo"
 
-       count=`echo $count+1|bc`
+       count=$((count+1))
     else
         echo "Input file not found:  $input"
         exit 1
@@ -207,6 +209,15 @@ echo "Generating bootstrap C++ for plugin $pluginname"
 
 echo "#include <Xyce_config.h>" >  ${pluginname}_bootstrap.C
 cat .headerstring_$$ >>   ${pluginname}_bootstrap.C
+echo "#ifdef _WIN32" >> ${pluginname}_bootstrap.C
+echo "#define XYCE_PLUGIN_EXPORT extern \"C\" __declspec(dllexport)" >> ${pluginname}_bootstrap.C
+echo "#else" >> ${pluginname}_bootstrap.C
+echo "#define XYCE_PLUGIN_EXPORT extern \"C\"" >> ${pluginname}_bootstrap.C
+echo "#endif" >> ${pluginname}_bootstrap.C
+echo "XYCE_PLUGIN_EXPORT void dl_register()" >> ${pluginname}_bootstrap.C
+echo "{" >> ${pluginname}_bootstrap.C
+cat .registerstring_$$ >> ${pluginname}_bootstrap.C
+echo "}" >> ${pluginname}_bootstrap.C
 echo "struct Bootstrap ">>   ${pluginname}_bootstrap.C
 echo "{">>   ${pluginname}_bootstrap.C
 echo "  Bootstrap()" >>   ${pluginname}_bootstrap.C
@@ -221,8 +232,8 @@ rm -f .headerstring_$$ .registerstring_$$
 # Use CMake to build this plugin.
 echo "Building plugin..."
 cp ${XyceInstDir}/share/XycePluginProject.cmake ./CMakeLists.txt
-cmake -DCMAKE_CXX_COMPILER="@CMAKE_CXX_COMPILER@" -DPLUGIN_NAME="$pluginname" -DXYCE_INSTALL="$XyceInstDir" .
+cmake -G "${GENERATOR}" -DCMAKE_CXX_COMPILER="@CMAKE_CXX_COMPILER@" -DCMAKE_BUILD_TYPE="@CMAKE_BUILD_TYPE@" -DPLUGIN_NAME="$pluginname" -DXYCE_INSTALL="$XyceInstDir" .
 cmake --build .
 
-echo "Done!  Your plugin may now be used by running Xyce with the option '-plugin ${pluginname}.so'"
+echo "Done!  Your plugin may now be used by running Xyce with the option '-plugin ${pluginname}${PLUGIN_SUFFIX}'"
 echo "This plugin provides the Verilog-A modules: $modules"

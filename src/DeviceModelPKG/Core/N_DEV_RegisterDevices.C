@@ -43,6 +43,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <N_DEV_Message.h>
 
 #include <N_DEV_RegisterDevices.h>
@@ -109,7 +113,7 @@ void registerDL(const char *so_path, const char *function_key = 0);
 void
 registerPlugin(const char *name) 
 {
-  registerDL(name);
+  registerDL(name, "dl_register");
 }
 
 typedef void (*dl_register_t)();
@@ -141,6 +145,29 @@ void registerDL(const char *so_path, const char *function_key) {
     }
   }
 #endif // HAVE_DLFCN_H
+
+#ifdef _WIN32
+  HMODULE dl = LoadLibraryA(so_path);
+  if (!dl) {
+    DWORD error = GetLastError();
+    Report::UserError0() << "Failed to load plugin " << so_path
+                         << " with LoadLibraryA(), error code " << error;
+  }
+  else if (function_key && std::strlen(function_key)) {
+    std::string s = function_key;
+    dl_register_t f = reinterpret_cast<dl_register_t>(GetProcAddress(dl, s.c_str()));
+
+    if (f) {
+      (*f)();
+    }
+    else {
+      DWORD error = GetLastError();
+      Report::UserError0() << "Failed to find plugin entry point " << s
+                           << " in " << so_path
+                           << ", GetProcAddress() error code " << error;
+    }
+  }
+#endif // _WIN32
 }
 
 } // namespace Device

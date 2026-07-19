@@ -154,9 +154,15 @@ if ( CMAKE_HOST_WIN32 )
     set(IOMP5_PATH ${IOMP5_PATH} CACHE STRING "Converted from symbolic link to real path in ${CMAKE_CURRENT_LIST_FILE}" FORCE)
   endif()
 
-  install ( FILES ${SVML_PATH} DESTINATION bin COMPONENT Runtime)  
-  install ( FILES ${MMD_PATH} DESTINATION bin COMPONENT Runtime)
-  install ( FILES ${IOMP5_PATH} DESTINATION bin COMPONENT Runtime)
+  if(EXISTS "${SVML_PATH}")
+    install ( FILES ${SVML_PATH} DESTINATION bin COMPONENT Runtime)
+  endif()
+  if(EXISTS "${MMD_PATH}")
+    install ( FILES ${MMD_PATH} DESTINATION bin COMPONENT Runtime)
+  endif()
+  if(EXISTS "${IOMP5_PATH}")
+    install ( FILES ${IOMP5_PATH} DESTINATION bin COMPONENT Runtime)
+  endif()
 
   # For native Windows builds we also need assorted MS Visual Studio DLLs
   # This thing apparently takes care of it:
